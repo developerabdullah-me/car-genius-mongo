@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion,ObjectId } = require("mongodb");
 require("dotenv").config();
 const app = express();
@@ -19,12 +20,22 @@ async function run (){
 try{
 await client.connect();
 const ServiceCollection=client.db('car-geneus').collection('service')
+const orderCollection=client.db('car-geneus').collection('order')
+// auth
+app.post('/login',async(req, res)=>{
+  const user=req.body;
+  const accessToken=jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{
+    expiresIn:id
+  })
+  res.send({accessToken})
+})
 // multple collection
 app.get('/service',async(req,res) => {
     const query={}
     const cursor=ServiceCollection.find(query)
     const services=await cursor.toArray()
     res.send(services)
+  
 })
 
 app.get('/service/:id', async(req, res) => {
@@ -46,6 +57,22 @@ app.delete('/service/:id',async(req, res)=>{
   const result=await ServiceCollection.deleteOne(require)
   res.send(result)
 })
+// orders 
+app.get('/order',async(req, res)=>{
+  const email = req.body.email;
+  const query={email: email};
+  const cursor=orderCollection.find(query);
+  const result=cursor.toArray();
+  res.send(result)
+
+})
+
+// post
+app.post('/order',async(req, res)=>{
+  const order=req.body;
+  const result=await orderCollection.insertOne(order)
+  res.send(result)
+})
 
 }
 finally{
@@ -54,7 +81,7 @@ finally{
 }
 run().catch(console.dir)
 app.get("/", (req, res) => {
-  res.send("running geneus");
+  res.send("running genius");
 });
 
 app.listen(port, () => {
