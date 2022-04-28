@@ -8,6 +8,23 @@ const port = process.env.PORT || 5000;
 // middelware
 app.use(cors());
 app.use(express.json());
+ 
+function verifyJWT(req, res, next) {
+  const authHeader=req.headers.authorization
+  if(!authHeader){
+    return res.status(401).send({massage: 'unauthorized'});
+  }
+  const token=authHeader.split(' ')[1];
+  jwt.verify(token,process.env.ACCESS_TOKEN_SECRETfunction,(err, decoded)=>{
+    if(err){
+      return res.status.send({massage:massage})
+    }
+    console.log(decoded);
+    req.decoded=decoded;
+  })
+  console.log('inside verify jwt',authHeader);
+  next();
+}
 
 // mongo collection
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fdz6q.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -24,6 +41,7 @@ const orderCollection=client.db('car-geneus').collection('order')
 // auth
 app.post('/login',async(req, res)=>{
   const user=req.body;
+
   const accessToken=jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{
     expiresIn:id
   })
@@ -45,7 +63,7 @@ app.get('/service/:id', async(req, res) => {
     res.send(service)
 })
 // post
-app.post('/service',async(req, res)=>{
+app.post('/service',verifyJWT,async(req, res)=>{
 const newServices=req.body;
 const result=await ServiceCollection.insertOne(newServices)
 res.send(result)
